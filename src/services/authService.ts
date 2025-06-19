@@ -15,38 +15,81 @@ const mapUserToUserType = (dbUser: User): UserType => ({
 });
 
 export const loginUser = async (email: string, password: string): Promise<UserType> => {
-  // For demo purposes, create a mock user
-  const mockUser: UserType = {
-    id: 'demo-user-id',
-    email: email,
-    name: email.split('@')[0],
-    usageCount: Math.floor(Math.random() * 3),
-    usageLimit: 5,
-    isPremium: false,
-    createdAt: new Date().toISOString(),
-    authId: 'demo-auth-id'
-  };
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
-  return mockUser;
+  if (authError) throw new Error(authError.message);
+
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('auth_id', authData.user.id)
+    .single();
+
+  if (userError) throw new Error(userError.message);
+
+  return mapUserToUserType(userData);
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<void> => {
-  // For demo purposes, just simulate registration
-  return Promise.resolve();
+  // Sign up the user with Supabase Auth
+  // The database trigger will automatically create the user profile
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        name
+      }
+    }
+  });
+
+  if (authError) throw new Error(authError.message);
+  if (!authData.user) throw new Error('Registration failed: No user data returned');
+
+  // User profile creation is handled by database triggers
+  // No need to manually insert into users table
 };
 
 export const logoutUser = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw new Error(error.message);
   return true;
 };
 
 export const updateUserUsage = async (userId: string): Promise<UserType> => {
-  // For demo purposes, return a mock updated user
-  const savedUser = localStorage.getItem('user');
-  if (savedUser) {
-    const user = JSON.parse(savedUser);
-    user.usageCount += 1;
-    localStorage.setItem('user', JSON.stringify(user));
-    return user;
-  }
-  throw new Error('User not found');
+  // First, get the current usage count
+  const { data: currentUser, error: fetchError } = await supabase
+    .from('users')
+    .select('usage_count')
+    .eq('id', userId)
+    .single();
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  // Then update with the incremented value
+  const { data, error } = await supabase
+    .from('users')
+    .update({ usage_count: (currentUser.usage_count || 0) + 1 })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return mapUserToUserType(data);
+};
+
+export const sendPasswordResetEmail = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw new Error(error.message);
+};
+
+export const resendConfirmationEmail = async (email: string): Promise<void> => {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email
+  });
+  if (error) throw new Error(error.message);
 };
