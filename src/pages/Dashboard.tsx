@@ -1,13 +1,116 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ImageUploader from '../components/ImageUploader';
+import DescriptionCard from '../components/DescriptionCard';
+import { UploadedImage, ProductDescription } from '../types';
+import { generateProductDescription, sendDescriptionByEmail } from '../services/aiService';
 import { Sparkles, Info, AlertCircle, User } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [descriptions, setDescriptions] = useState<ProductDescription[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [generationLimit, setGenerationLimit] = useState(false);
   const [activeTab, setActiveTab] = useState<'generate' | 'account'>('generate');
 
+  useEffect(() => {
+    if (user && !user.isPremium && user.usageCount >= user.usageLimit) {
+      setGenerationLimit(true);
+    } else {
+      setGenerationLimit(false);
+    }
+  }, [user]);
+
+  const handleImageUpload = (uploadedImages: UploadedImage[]) => {
+    setImages(uploadedImages);
+    setError(null);
+  };
+
+  const getPlanFeatures = () => {
+    if (!user) return { maxTags: 5, maxWords: 150, planName: 'Free', maxImages: 1 };
+    
+    if (!user.isPremium) {
+      return { maxTags: 5, maxWords: 150, planName: 'Free', maxImages: 1 };
+    } else if (user.usageLimit === 50) {
+      return { maxTags: 10, maxWords: 300, planName: 'Starter', maxImages: 2 };
+    } else if (user.usageLimit === 200) {
+      return { maxTags: 15, maxWords: 500, planName: 'Pro', maxImages: 10 };
+    }
+    
+    return { maxTags: 5, maxWords: 150, planName: 'Free', maxImages: 1 };
+  };
+
+  const getPlanType = (): 'free' | 'starter' | 'pro' => {
+    if (!user || !user.isPremium) return 'free';
+    if (user.usageLimit === 50) return 'starter';
+    if (user.usageLimit === 200) return 'pro';
+    return 'free';
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!user) return;
+    
+    if (!user.isPremium && user.usageCount >= user.usageLimit) {
+      setError("You've reached your monthly usage limit.");
+      return;
+    }
+    
+    if (images.length === 0) {
+      setError("Please upload at least one image.");
+      return;
+    }
+
+    const completedImages = images.filter(img => img.status === 'complete');
+    if (completedImages.length !== images.length) {
+      setError("Please wait for all images to finish uploading.");
+      return;
+    }
+    
+    setError(null);
+    setGenerating(true);
+    
+    try {
+      const image = images[0];
+      const description = await generateProductDescription(
+        image.file,
+        image.preview,
+        user.id,
+        user.usageLimit,
+        user.isPremium
+      );
+      
+      setDescriptions(prev => [description, ...prev]);
+      setImages([]);
+      
+      // Update user usage count
+      setUser({
+        ...user,
+        usageCount: user.usageCount + 1
+      });
+      
+    } catch (err) {
+      console.error('Generation error:', err);
+      setError(err instanceof Error ? err.message : "Failed to generate description");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSendEmail = async (email: string, description: ProductDescription) => {
+    try {
+      return await sendDescriptionByEmail(email, description);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send email");
+      return false;
+    }
+  };
+
   if (!user) return null;
+
+  const planFeatures = getPlanFeatures();
 
   const getCurrentPlanName = () => {
     if (!user.isPremium) return 'Free Plan';
@@ -15,6 +118,11 @@ const Dashboard = () => {
     if (user.usageLimit === 200) return 'Pro Plan';
     return 'Free Plan';
   };
+
+  const canGenerate = images.length > 0 && 
+                     images.every(img => img.status === 'complete') && 
+                     !generating && 
+                     (!(!user.isPremium && generationLimit));
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -111,9 +219,9 @@ const Dashboard = () => {
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>• {user.usageLimit} generations per month</p>
-                      <p>• SEO optimization included</p>
-                      <p>• Email sharing</p>
-                      {user.isPremium && <p>• Priority support</p>}
+                      <p>• {planFeatures.maxTags} SEO tags per product</p>
+                      <p>• Up to {planFeatures.maxWords} words per description</p>
+                      <p>• {planFeatures.maxImages} image{planFeatures.maxImages > 1 ? 's' : ''} per batch</p>
                     </div>
                   </div>
                 </div>
@@ -162,11 +270,11 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1">Your Plan Features</h3>
                   <div className="text-sm text-gray-700 space-y-1">
-                    <p>• <strong>{getCurrentPlanName()}</strong></p>
+                    <p>• <strong>{planFeatures.planName} Plan</strong></p>
+                    <p>• Up to {planFeatures.maxTags} SEO tags</p>
+                    <p>• Max {planFeatures.maxWords} words</p>
                     <p>• {user.usageLimit} generations/month</p>
-                    <p>• SEO optimization</p>
-                    <p>• Email sharing</p>
-                    {user.isPremium && <p>• Priority support</p>}
+                    <p>• {planFeatures.maxImages} image{planFeatures.maxImages > 1 ? 's' : ''} per batch</p>
                   </div>
                   {!user.isPremium && (
                     <p className="text-sm text-gray-700 mt-2">
@@ -187,36 +295,81 @@ const Dashboard = () => {
               <div className="card">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Generate New Description</h2>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                  <Sparkles className="h-12 w-12 text-blue-800 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Description Generator</h3>
-                  <p className="text-gray-600 mb-4">
-                    Upload a product image to generate SEO-optimized descriptions with AI
-                  </p>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                    <div className="flex items-start">
-                      <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
-                      <div className="text-left">
-                        <p className="text-sm text-yellow-800 font-medium">Demo Mode</p>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          The AI generation feature requires additional configuration. 
-                          This is a demo version of the SEO Snap application.
-                        </p>
-                      </div>
+                {error && (
+                  <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-sm font-medium">Error:</span>
+                      <span className="text-sm ml-1">{error}</span>
                     </div>
                   </div>
+                )}
+                
+                <ImageUploader 
+                  onImageUpload={handleImageUpload} 
+                  className="mb-6"
+                  maxImages={planFeatures.maxImages}
+                  planType={getPlanType()}
+                />
+                
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleGenerateDescription}
+                    disabled={!canGenerate}
+                    className="btn btn-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {generating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Generating with AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        <span>
+                          Generate Description{images.length > 1 ? 's' : ''} ({planFeatures.planName})
+                        </span>
+                      </>
+                    )}
+                  </button>
                 </div>
+                
+                {!user.isPremium && generationLimit && (
+                  <div className="mt-4">
+                    <p className="text-sm text-red-600 mb-2">
+                      You've reached your monthly limit. Please upgrade your plan for more generations.
+                    </p>
+                    <Link to="/plans" className="btn btn-primary w-full sm:w-auto">
+                      Upgrade Now
+                    </Link>
+                  </div>
+                )}
               </div>
               
-              {/* No descriptions message */}
-              <div className="text-center py-12">
-                <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No descriptions yet</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  Upload a product photo and click "Generate Description" to create your first AI-powered, 
-                  SEO-optimized product description.
-                </p>
-              </div>
+              {/* Generated Descriptions */}
+              {descriptions.length > 0 && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-gray-900">Your Descriptions ({descriptions.length})</h2>
+                  
+                  {descriptions.map(description => (
+                    <DescriptionCard 
+                      key={description.id}
+                      description={description}
+                      onSendEmail={handleSendEmail}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {descriptions.length === 0 && !generating && (
+                <div className="text-center py-12">
+                  <Sparkles className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No descriptions yet</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    Upload {planFeatures.maxImages > 1 ? `up to ${planFeatures.maxImages} product photos` : 'a product photo'} and click "Generate Description{planFeatures.maxImages > 1 ? 's' : ''}" to create your first AI-powered, SEO-optimized product description{planFeatures.maxImages > 1 ? 's' : ''} with {planFeatures.planName} plan features.
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             /* Account Management Content */
@@ -271,7 +424,7 @@ const Dashboard = () => {
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                         <div>
                           <p className="text-2xl font-bold text-gray-900">{user.usageLimit}</p>
                           <p className="text-xs text-gray-600">Monthly Limit</p>
@@ -281,8 +434,16 @@ const Dashboard = () => {
                           <p className="text-xs text-gray-600">Used This Month</p>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-gray-900">{Math.max(0, user.usageLimit - user.usageCount)}</p>
-                          <p className="text-xs text-gray-600">Remaining</p>
+                          <p className="text-2xl font-bold text-gray-900">{planFeatures.maxTags}</p>
+                          <p className="text-xs text-gray-600">SEO Tags</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{planFeatures.maxWords}</p>
+                          <p className="text-xs text-gray-600">Max Words</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{planFeatures.maxImages}</p>
+                          <p className="text-xs text-gray-600">Images/Batch</p>
                         </div>
                       </div>
                     </div>
