@@ -52,18 +52,13 @@ const Footer = () => {
             </h3>
             <ul className="space-y-3">
               <li>
-                <Link to="/pricing" className="text-gray-600 hover:text-blue-800 transition-colors">
+                <Link to="/plans" className="text-gray-600 hover:text-blue-800 transition-colors">
                   Pricing
                 </Link>
               </li>
               <li>
                 <Link to="/about" className="text-gray-600 hover:text-blue-800 transition-colors">
                   About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/roadmap" className="text-gray-600 hover:text-blue-800 transition-colors">
-                  Roadmap
                 </Link>
               </li>
             </ul>
@@ -76,9 +71,9 @@ const Footer = () => {
             </h3>
             <ul className="space-y-3">
               <li>
-                <Link to="/pricing#faq" className="text-gray-600 hover:text-blue-800 transition-colors">
-                  FAQ
-                </Link>
+                <a href="mailto:support@seosnap.com" className="text-gray-600 hover:text-blue-800 transition-colors">
+                  Contact Support
+                </a>
               </li>
               <li>
                 <a href="#community" className="text-gray-600 hover:text-blue-800 transition-colors">
@@ -91,44 +86,7 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="mt-12 pt-8 border-t border-gray-100">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            {/* Legal Links */}
-            <div className="flex flex-wrap justify-center md:justify-start space-x-6 mb-4 md:mb-0">
-              <Link 
-                to="/terms" 
-                className="text-sm text-gray-600 hover:text-blue-800 transition-colors"
-              >
-                Terms of Service
-              </Link>
-              <Link 
-                to="/privacy" 
-                className="text-sm text-gray-600 hover:text-blue-800 transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              <Link 
-                to="/cookies" 
-                className="text-sm text-gray-600 hover:text-blue-800 transition-colors"
-              >
-                Cookie Policy
-              </Link>
-              <Link 
-                to="/disclaimer" 
-                className="text-sm text-gray-600 hover:text-blue-800 transition-colors"
-              >
-                Disclaimer
-              </Link>
-              <Link 
-                to="/roadmap" 
-                className="text-sm text-gray-600 hover:text-blue-800 transition-colors"
-              >
-                Roadmap
-              </Link>
-            </div>
-          </div>
-
-          {/* Copyright */}
-          <div className="mt-6 text-center">
+          <div className="text-center">
             <p className="text-sm text-gray-500">
               © {new Date().getFullYear()} SEO Snap. All rights reserved. Made with ❤️ for e-commerce businesses.
             </p>

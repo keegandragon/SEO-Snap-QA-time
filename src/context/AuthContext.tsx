@@ -72,38 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
     } catch (err) {
-      if (err instanceof Error) {
-        try {
-          // Parse the outer JSON structure
-          const errorData = JSON.parse(err.message);
-          
-          // Check if there's a nested body that needs parsing
-          if (errorData.body && typeof errorData.body === 'string') {
-            try {
-              // Parse the nested body JSON
-              const bodyData = JSON.parse(errorData.body);
-              if (bodyData.code === 'email_not_confirmed') {
-                setError('Please check your email inbox and click the confirmation link to verify your email address before logging in.');
-                return;
-              }
-              // Set error message from the body if available
-              setError(bodyData.message || 'Login failed');
-              return;
-            } catch {
-              // If body parsing fails, use the outer error message
-              setError(errorData.message || 'Login failed');
-              return;
-            }
-          }
-          // If no body, use the outer error message
-          setError(errorData.message || 'Login failed');
-        } catch {
-          // If JSON parsing fails completely, use the original error message
-          setError(err.message || 'Login failed');
-        }
-      } else {
-        setError('Login failed');
-      }
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }

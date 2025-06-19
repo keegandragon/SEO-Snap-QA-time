@@ -35,7 +35,6 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Final validation before submission
     if (password.length < 8) {
       setPasswordError('Password must be at least 8 characters long');
       return;
@@ -173,39 +172,7 @@ const Register = () => {
                     Must be at least 8 characters
                   </p>
                 )}
-                
-                {password.length > 0 && (
-                  <div className="text-xs text-gray-500">
-                    <p>Password strength: <span className={`font-medium ${
-                      passwordStrength === 'weak' ? 'text-red-600' :
-                      passwordStrength === 'medium' ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {passwordStrength === 'weak' ? 'Weak' :
-                       passwordStrength === 'medium' ? 'Medium' : 'Strong'}
-                    </span></p>
-                  </div>
-                )}
               </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-blue-800 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
-                I agree to the{' '}
-                <Link to="#" className="text-blue-800 hover:text-blue-700">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link to="#" className="text-blue-800 hover:text-blue-700">
-                  Privacy Policy
-                </Link>
-              </label>
             </div>
 
             <div>
@@ -230,6 +197,11 @@ const Register = () => {
               Sign in
             </Link>
           </div>
+        </div>
+
+        {/* Demo account info */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>For demo purposes, any email and password combination will work</p>
         </div>
       </div>
     </div>

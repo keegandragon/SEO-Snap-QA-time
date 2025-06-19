@@ -25,21 +25,6 @@ export interface UserType {
   stripeCustomerId?: string;
 }
 
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan_type: 'free' | 'starter' | 'pro';
-  status: 'active' | 'canceled' | 'expired';
-  current_period_start: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-  canceled_at?: string;
-  created_at: string;
-  updated_at: string;
-  stripe_subscription_id?: string;
-  stripe_price_id?: string;
-}
-
 export interface UploadedImage {
   id: string;
   file: File;
@@ -71,5 +56,4 @@ export interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
-  togglePremium: () => void;
 }

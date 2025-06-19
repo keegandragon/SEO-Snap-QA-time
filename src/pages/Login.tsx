@@ -2,35 +2,17 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle, Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { resendConfirmationEmail } from '../services/authService';
 
 const Login = () => {
   const { login, loading, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(email, password);
   };
-
-  const handleResendConfirmation = async () => {
-    try {
-      setResendLoading(true);
-      await resendConfirmationEmail(email);
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000); // Reset success message after 5 seconds
-    } catch (err) {
-      console.error('Failed to resend confirmation email:', err);
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
-  const isEmailConfirmationError = error?.toLowerCase().includes('email not confirmed');
 
   return (
     <div className="flex justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -48,19 +30,7 @@ const Login = () => {
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
                 <div className="flex items-start">
                   <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-sm">{error}</span>
-                    {isEmailConfirmationError && (
-                      <button
-                        type="button"
-                        onClick={handleResendConfirmation}
-                        disabled={resendLoading || resendSuccess}
-                        className="block mt-2 text-sm font-medium text-blue-800 hover:text-blue-700 disabled:opacity-50"
-                      >
-                        {resendLoading ? 'Sending...' : resendSuccess ? 'Confirmation email sent!' : 'Resend confirmation email'}
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-sm">{error}</span>
                 </div>
               </div>
             )}
@@ -86,17 +56,9 @@ const Login = () => {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm text-blue-800 hover:text-blue-700"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   id="password"

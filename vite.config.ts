@@ -26,7 +26,6 @@ export default defineConfig({
         }
       }
     },
-    // Ignore TypeScript errors during build for deployment
     emptyOutDir: true
   },
   define: {

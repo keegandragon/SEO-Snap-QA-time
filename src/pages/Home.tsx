@@ -22,8 +22,8 @@ const Home = () => {
                 <Link to={user ? "/dashboard" : "/register"} className="btn btn-primary px-8 py-3 text-base">
                   {user ? "Go to Dashboard" : "Start for Free"}
                 </Link>
-                <Link to="/premium" className="btn btn-outline px-8 py-3 text-base">
-                  Learn More
+                <Link to="/plans" className="btn btn-outline px-8 py-3 text-base">
+                  View Plans
                 </Link>
               </div>
             </div>
@@ -99,18 +99,15 @@ const Home = () => {
               </div>
             </div>
             <blockquote className="text-xl italic text-gray-700 mb-8">
-              "SEO Snap has been a game-changer for my Etsy store. I used to spend hours writing descriptions for store. Now I just upload a photo and get beautiful, SEO-friendly descriptions in seconds!"
+              "SEO Snap has been a game-changer for my online store. I used to spend hours writing descriptions. Now I just upload a photo and get beautiful, SEO-friendly descriptions in seconds!"
             </blockquote>
             <div className="flex items-center justify-center">
-              <img 
-                src="/photo_2025-06-17_19-42-46.jpg" 
-                alt="William McAuley" 
-                className="w-12 h-12 rounded-full object-cover mr-4"
-                style={{ objectPosition: 'center 20%' }}
-              />
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                <span className="text-blue-800 font-bold">SM</span>
+              </div>
               <div className="text-left">
-                <p className="font-semibold text-gray-900">William McAuley</p>
-                <p className="text-sm text-gray-600">Etsy Store Owner</p>
+                <p className="font-semibold text-gray-900">Sarah Mitchell</p>
+                <p className="text-sm text-gray-600">E-commerce Store Owner</p>
               </div>
             </div>
           </div>
@@ -128,8 +125,8 @@ const Home = () => {
             <Link to={user ? "/dashboard" : "/register"} className="btn bg-white text-blue-800 hover:bg-blue-50 px-8 py-3 text-base font-medium">
               {user ? "Go to Dashboard" : "Start Your Free Trial"}
             </Link>
-            <Link to="/premium" className="btn bg-blue-700 text-white hover:bg-blue-600 px-8 py-3 text-base font-medium">
-              Learn More
+            <Link to="/plans" className="btn bg-blue-700 text-white hover:bg-blue-600 px-8 py-3 text-base font-medium">
+              View Plans
             </Link>
           </div>
         </div>

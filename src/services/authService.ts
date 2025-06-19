@@ -15,122 +15,38 @@ const mapUserToUserType = (dbUser: User): UserType => ({
 });
 
 export const loginUser = async (email: string, password: string): Promise<UserType> => {
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  // For demo purposes, create a mock user
+  const mockUser: UserType = {
+    id: 'demo-user-id',
+    email: email,
+    name: email.split('@')[0],
+    usageCount: Math.floor(Math.random() * 3),
+    usageLimit: 5,
+    isPremium: false,
+    createdAt: new Date().toISOString(),
+    authId: 'demo-auth-id'
+  };
 
-  if (authError) throw new Error(authError.message);
-
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('auth_id', authData.user.id)
-    .single();
-
-  if (userError) throw new Error(userError.message);
-
-  return mapUserToUserType(userData);
+  return mockUser;
 };
 
 export const registerUser = async (name: string, email: string, password: string): Promise<void> => {
-  // Sign up the user with Supabase Auth
-  // The database trigger will automatically create the user profile
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        name
-      }
-    }
-  });
-
-  if (authError) throw new Error(authError.message);
-  if (!authData.user) throw new Error('Registration failed: No user data returned');
-
-  // User profile creation is handled by database triggers
-  // No need to manually insert into users table
+  // For demo purposes, just simulate registration
+  return Promise.resolve();
 };
 
 export const logoutUser = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
   return true;
 };
 
 export const updateUserUsage = async (userId: string): Promise<UserType> => {
-  // First, get the current usage count
-  const { data: currentUser, error: fetchError } = await supabase
-    .from('users')
-    .select('usage_count')
-    .eq('id', userId)
-    .single();
-
-  if (fetchError) throw new Error(fetchError.message);
-
-  // Then update with the incremented value
-  const { data, error } = await supabase
-    .from('users')
-    .update({ usage_count: (currentUser.usage_count || 0) + 1 })
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return mapUserToUserType(data);
-};
-
-export const togglePremiumMode = async (userId: string): Promise<UserType> => {
-  const { data: currentUser, error: fetchError } = await supabase
-    .from('users')
-    .select('is_premium, usage_limit')
-    .eq('id', userId)
-    .single();
-
-  if (fetchError) throw new Error(fetchError.message);
-
-  let newIsPremium = false;
-  let newLimit = 5; // Default free tier
-
-  // Cycle through plans: Free (5) → Starter (50) → Pro (200) → Free
-  if (!currentUser.is_premium && currentUser.usage_limit === 5) {
-    // Currently Free → Switch to Starter
-    newIsPremium = true;
-    newLimit = 50;
-  } else if (currentUser.is_premium && currentUser.usage_limit === 50) {
-    // Currently Starter → Switch to Pro
-    newIsPremium = true;
-    newLimit = 200;
-  } else {
-    // Currently Pro or any other state → Switch to Free
-    newIsPremium = false;
-    newLimit = 5;
+  // For demo purposes, return a mock updated user
+  const savedUser = localStorage.getItem('user');
+  if (savedUser) {
+    const user = JSON.parse(savedUser);
+    user.usageCount += 1;
+    localStorage.setItem('user', JSON.stringify(user));
+    return user;
   }
-
-  const { data, error } = await supabase
-    .from('users')
-    .update({ 
-      is_premium: newIsPremium,
-      usage_limit: newLimit
-    })
-    .eq('id', userId)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return mapUserToUserType(data);
-};
-
-export const sendPasswordResetEmail = async (email: string): Promise<void> => {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
-  if (error) throw new Error(error.message);
-};
-
-export const resendConfirmationEmail = async (email: string): Promise<void> => {
-  const { error } = await supabase.auth.resend({
-    type: 'signup',
-    email: email
-  });
-  if (error) throw new Error(error.message);
+  throw new Error('User not found');
 };
